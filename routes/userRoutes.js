@@ -11,13 +11,13 @@ router.get("/:userId", userAuthMW, userController.getUser);
 
 router.patch(
   "/changePassword/:userId",
+  userAuthMW,
   [
     body("password")
       .trim()
       .isLength({ min: 5 })
       .withMessage("Minimum Password length: 5"),
   ],
-  userAuthMW,
   userController.editPassword
 );
 
@@ -25,21 +25,13 @@ router.patch(
   "/:userId",
   userAuthMW,
   [
-    body("firstname")
-      .trim()
-      .not()
-      .isEmpty()
-      .withMessage("Please enter First Name"),
-    body("lastname")
-      .trim()
-      .not()
-      .isEmpty()
-      .withMessage("Please enter Last Name"),
+    body("firstname").trim().not().isEmpty().withMessage("First Name required"),
+    body("lastname").trim().not().isEmpty().withMessage("Last Name required"),
     body("contactNo")
       .trim()
       .not()
       .isEmpty()
-      .withMessage("Please enter Contact No."),
+      .withMessage("Contact No. required"),
   ],
   userController.patchUser
 );

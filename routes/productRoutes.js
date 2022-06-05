@@ -1,58 +1,54 @@
 const express = require("express");
 const { body } = require("express-validator/check");
-
-const buoyController = require("../controllers/buoyController");
+const productController = require("../controllers/productController");
 const userAuthMW = require("../middlewares/userAuthMW");
 
 const router = express.Router();
-const Buoy = require("../models/Buoy");
 
-router.get("/", buoyController.getBuoys);
+router.get("/", productController.getProducts);
 
-router.get("/:buoyId", userAuthMW, buoyController.getBuoy);
+router.get("/:productId", productController.getProduct);
 
 router.post(
   "/",
   userAuthMW,
   [
-    body("serialKey")
+    body("name").trim().not().isEmpty().withMessage("Product name required"),
+    body("description")
       .trim()
       .not()
       .isEmpty()
-      .custom((value, { req }) => {
-        if (value.length !== 11) {
-          return Promise.reject("Serial key should be 11 character String");
-        }
-        return Buoy.findOne({ serialKey: value }).then((buoyDoc) => {
-          if (buoyDoc) {
-            return Promise.reject("Buoy with the same serial already exist");
-          }
-        });
-      }),
-    body("alertThreshold").not().isEmpty().withMessage("Enter Alert Threshold"),
-    body("alarmThreshold").not().isEmpty().withMessage("Enter Alarm Threshold"),
-    body("criticalThreshold")
+      .withMessage("Product description required"),
+    body("price").trim().not().isEmpty().withMessage("Product price required"),
+    body("businessId")
+      .trim()
       .not()
       .isEmpty()
-      .withMessage("Enter Critical Threshold"),
+      .withMessage("Business ID required"),
   ],
-  buoyController.postBuoy
+  productController.postProduct
 );
 
 router.patch(
-  "/:buoyId",
+  "/:productId",
+  userAuthMW,
   [
-    body("alertThreshold").not().isEmpty().withMessage("Enter Alert Threshold"),
-    body("alarmThreshold").not().isEmpty().withMessage("Enter Alarm Threshold"),
-    body("criticalThreshold")
+    body("name").trim().not().isEmpty().withMessage("Product name required"),
+    body("description")
+      .trim()
       .not()
       .isEmpty()
-      .withMessage("Enter Critical Threshold"),
+      .withMessage("Product description required"),
+    body("price").trim().not().isEmpty().withMessage("Product price required"),
+    body("businessId")
+      .trim()
+      .not()
+      .isEmpty()
+      .withMessage("Business ID required"),
   ],
-  userAuthMW,
-  buoyController.patchBuoy
+  productController.patchProduct
 );
 
-router.delete("/:buoyId", userAuthMW, buoyController.deleteBuoy);
+router.delete("/:productId", userAuthMW, productController.deleteProduct);
 
 module.exports = router;

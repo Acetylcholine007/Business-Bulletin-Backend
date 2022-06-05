@@ -1,26 +1,27 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const reportSchema = new Schema(
+const serviceSchema = new Schema(
   {
-    type: {
+    name: {
       type: String,
       required: true,
     },
-    serialKey: {
+    description: {
       type: String,
       required: true,
     },
-    heading: {
-      type: String,
+    price: {
+      type: Number,
       required: true,
     },
-    body: {
-      type: String,
+    business: {
+      type: Schema.Types.ObjectId,
+      ref: "Business",
       required: true,
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Report", reportSchema);
+module.exports = mongoose.model("Service", serviceSchema);

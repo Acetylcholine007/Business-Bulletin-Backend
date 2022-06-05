@@ -1,34 +1,27 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const buoySchema = new Schema(
+const productSchema = new Schema(
   {
-    serialKey: {
+    name: {
       type: String,
       required: true,
     },
-    location: {
+    description: {
       type: String,
       required: true,
     },
-    currentLevel: {
-      type: Number,
-      default: 0,
-    },
-    alertThreshold: {
+    price: {
       type: Number,
       required: true,
     },
-    alarmThreshold: {
-      type: Number,
-      required: true,
-    },
-    criticalThreshold: {
-      type: Number,
+    business: {
+      type: Schema.Types.ObjectId,
+      ref: "Business",
       required: true,
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Buoy", buoySchema);
+module.exports = mongoose.model("Product", productSchema);

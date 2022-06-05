@@ -8,75 +8,65 @@ const userVerificationMW = require("../middlewares/userVerificationMW");
 const router = express.Router();
 
 router.post(
-  "/user/signup",
+  "/signup",
   [
     body("email")
       .isEmail()
-      .withMessage("Please enter a valid email")
-      .custom((value, { req }) => {
-        return User.findOne({ email: value }).then((userDoc) => {
-          if (userDoc) {
-            return Promise.reject("Email address already exists");
-          }
-        });
+      .withMessage("Invalid email")
+      .custom(async (value) => {
+        const userDoc = await User.findOne({ email: value });
+        if (userDoc) {
+          return Promise.reject("Email address already exists");
+        }
       })
       .normalizeEmail({ gmail_remove_dots: false }),
     body("password")
       .trim()
       .isLength({ min: 5 })
       .withMessage("Minimum Password length: 5"),
-    body("firstname")
-      .trim()
-      .not()
-      .isEmpty()
-      .withMessage("Please enter First Name"),
-    body("lastname")
-      .trim()
-      .not()
-      .isEmpty()
-      .withMessage("Please enter Last Name"),
+    body("firstname").trim().not().isEmpty().withMessage("First Name required"),
+    body("lastname").trim().not().isEmpty().withMessage("Last Name required"),
     body("contactNo")
       .trim()
       .not()
       .isEmpty()
-      .withMessage("Please enter Contact No."),
+      .withMessage("contact No. required"),
   ],
   authController.signup
 );
 
 router.post(
-  "/user/login",
+  "/login",
   [
-    body("email").isEmail().trim().not().isEmpty(),
-    body("password").trim().not().isEmpty(),
+    body("email")
+      .isEmail()
+      .trim()
+      .not()
+      .isEmpty()
+      .withMessage("Email required"),
+    body("password").trim().not().isEmpty().withMessage("Password required"),
   ],
   authController.login
 );
 
 router.get(
-  "/user/verify/:verificationToken",
+  "/verify/:verificationToken",
   userVerificationMW,
   authController.verifyUser
 );
 
-router.get(
-  "/user/resetPasswordForm/:uid",
-  authController.resetPasswordForm
-);
+router.get("/resetPasswordForm/:uid", authController.resetPasswordForm);
+
+router.post("/resetPassword/:uid", authController.resetPassword);
 
 router.post(
-  "/user/resetPassword/:uid",
-  authController.resetPassword
-);
-
-router.post(
-  "/user/sendResetPassword",
+  "/sendResetPassword",
   [body("email").isEmail().trim().not().isEmpty()],
   authController.sendResetPassword
 );
 
 router.post(
-  "/user/sendVerification",
+  "/sendVerification",
   [body("email").isEmail().trim().not().isEmpty()],
   authController.sendVerification
 );

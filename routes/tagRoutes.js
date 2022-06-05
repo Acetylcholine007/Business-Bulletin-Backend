@@ -1,34 +1,28 @@
 const express = require("express");
 const { body } = require("express-validator/check");
-
-const reportController = require("../controllers/reportController");
+const tagController = require("../controllers/tagController");
 const userAuthMW = require("../middlewares/userAuthMW");
 
 const router = express.Router();
-const Report = require("../models/Report");
 
-router.get("/", userAuthMW, reportController.getReports);
+router.get("/", tagController.getTags);
 
-router.get("/:reportId", userAuthMW, reportController.getReport);
+router.get("/:tagId", tagController.getTag);
 
 router.post(
   "/",
-  [
-    body("type").trim().not().isEmpty().withMessage("Specify Report Type"),
-    body("serialKey").trim().not().isEmpty().withMessage("Specify Serial Key"),
-    body("heading")
-      .trim()
-      .not()
-      .isEmpty()
-      .withMessage("Specify report heading"),
-    body("body").trim().not().isEmpty().withMessage("Specify report body"),
-  ],
   userAuthMW,
-  reportController.postReport
+  [body("name").trim().not().isEmpty().withMessage("Tag name required")],
+  tagController.postTag
 );
 
-router.patch("/:reportId", userAuthMW, reportController.patchReport);
+router.patch(
+  "/:tagId",
+  userAuthMW,
+  [body("name").trim().not().isEmpty().withMessage("Tag name required")],
+  tagController.patchTag
+);
 
-router.delete("/:reportId", userAuthMW, reportController.deleteReport);
+router.delete("/:tagId", userAuthMW, tagController.deleteTag);
 
 module.exports = router;
