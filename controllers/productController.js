@@ -1,41 +1,27 @@
 const { validationResult } = require("express-validator/check");
+const Product = require("../models/Product");
+mongoose = require("mongoose");
 
-const Buoy = require("../models/Buoy");
-const Reading = require("../models/Reading");
-
-exports.getBuoys = async (req, res, next) => {
-  const perPage = 12;
-  const query = req.query.query || "";
-  const currentPage = req.query.page || 1;
-  let queryTarget;
-  switch (req.query.target) {
-    case "serialKey":
-      queryTarget = "serialKey";
-      break;
-    case "location":
-      queryTarget = "location";
-      break;
-    default:
-      queryTarget = null;
-  }
+exports.getProducts = async (req, res, next) => {
   try {
-    const totalItems = await Buoy.find(
-      queryTarget ? { [queryTarget]: query } : {}
+    const perPage = 12;
+    const query = req.query.query || "";
+    const currentPage = req.query.page || 1;
+
+    const totalItems = await Product.find(
+      query ? { name: { $regex: query, $options: "i" } } : {}
     ).countDocuments();
-    const buoys = await Buoy.find(
-      query
-        ? queryTarget
-          ? { [queryTarget]: { $regex: query, $options: "i" } }
-          : {}
-        : {}
+    const products = await Product.find(
+      query ? { name: { $regex: query, $options: "i" } } : {}
     )
       .sort({ createdAt: -1 })
       .skip((currentPage - 1) * perPage)
-      .limit(perPage);
+      .limit(perPage)
+      .populate("business");
 
     res.status(200).json({
-      message: "Buoys fetched successfully.",
-      buoys,
+      message: "Products fetched successfully.",
+      products,
       totalItems,
     });
   } catch (err) {
@@ -46,26 +32,17 @@ exports.getBuoys = async (req, res, next) => {
   }
 };
 
-exports.getBuoy = async (req, res, next) => {
+exports.getProduct = async (req, res, next) => {
   try {
-    const readingLength = req.query.readingLength || 15;
-    const offset = req.query.offset || 0;
-    const buoyId = req.params.buoyId;
-    const buoy = await Buoy.findById(buoyId);
-    let readings = await Reading.find({
-      serialKey: buoy.serialKey,
-    })
-      .sort({ datetime: -1 })
-      .skip(offset)
-      .limit(readingLength);
-
-    readings.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
-
-    res.status(200).json({
-      message: "Buoy fetched",
-      buoy,
-      readings,
-    });
+    const product = await Product.findById(req.params.productId).populate(
+      "business"
+    );
+    if (!product) {
+      const error = new Error("Could not find product");
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({ message: "Product fetched", product });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -74,7 +51,7 @@ exports.getBuoy = async (req, res, next) => {
   }
 };
 
-exports.postBuoy = async (req, res, next) => {
+exports.postProduct = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -83,23 +60,18 @@ exports.postBuoy = async (req, res, next) => {
       error.data = errors.array();
       throw error;
     }
-    const serialKey = req.body.serialKey;
-    const location = req.body.location;
-    const alertThreshold = req.body.alertThreshold;
-    const alarmThreshold = req.body.alarmThreshold;
-    const criticalThreshold = req.body.criticalThreshold;
 
-    const buoy = new Buoy({
-      serialKey,
-      location,
-      alertThreshold,
-      alarmThreshold,
-      criticalThreshold,
+    const product = new Product({
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      business: req.body.businessId,
     });
-    await buoy.save();
+
+    await product.save();
     res.status(200).json({
-      message: "Buoy added",
-      buoy,
+      message: "Product added",
+      product,
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -109,7 +81,7 @@ exports.postBuoy = async (req, res, next) => {
   }
 };
 
-exports.patchBuoy = async (req, res, next) => {
+exports.patchProduct = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -118,32 +90,32 @@ exports.patchBuoy = async (req, res, next) => {
       error.data = errors.array();
       throw error;
     }
-    const buoyId = req.params.buoyId;
 
-    const buoy = await Buoy.findById(buoyId);
-    const buoy2 = await Buoy.findOne({ serialKey: req.body.serialKey });
-    if (!buoy) {
-      const error = new Error("Buoy does not exists");
+    const product = await Product.findById(req.params.productId);
+    const product2 = await Product.findOne({
+      name: req.body.name,
+      business: req.body.businessId,
+    });
+    if (!product) {
+      const error = new Error("Product does not exists");
       error.statusCode = 422;
       throw error;
     }
 
-    if (buoy.serialKey !== req.body.serialKey && buoy2) {
-      const error = new Error("Serial key already exists");
+    if (product.name !== req.body.name && product2) {
+      const error = new Error("Product name already exists");
       error.statusCode = 422;
       throw error;
     }
 
-    buoy.serialKey = req.body.serialKey;
-    buoy.location = req.body.location;
-    buoy.alertThreshold = req.body.alertThreshold;
-    buoy.alarmThreshold = req.body.alarmThreshold;
-    buoy.criticalThreshold = req.body.criticalThreshold;
+    product.name = req.body.name;
+    product.description = req.body.description;
+    product.price = req.body.price;
 
-    await buoy.save();
+    await product.save();
     res.status(200).json({
-      message: "Buoy updated",
-      buoy,
+      message: "Product updated",
+      product,
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -153,19 +125,18 @@ exports.patchBuoy = async (req, res, next) => {
   }
 };
 
-exports.deleteBuoy = async (req, res, next) => {
+exports.deleteProduct = async (req, res, next) => {
   try {
-    const buoyId = req.params.buoyId;
-    if (buoyId === undefined) {
-      const error = new Error("No buoyId params attached in URL");
+    if (req.params.productId === undefined) {
+      const error = new Error("No productId params attached in URL");
       error.statusCode = 422;
       throw error;
     }
 
-    await Buoy.findByIdAndRemove(buoyId);
+    await Product.findByIdAndRemove(req.params.productId);
 
     res.status(200).json({
-      message: "Buoy Removed",
+      message: "Product Removed",
     });
   } catch (err) {
     if (!err.statusCode) {

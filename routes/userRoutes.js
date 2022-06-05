@@ -18,7 +18,7 @@ router.patch(
       .isLength({ min: 5 })
       .withMessage("Minimum Password length: 5"),
   ],
-  userController.editPassword
+  userController.changePassword
 );
 
 router.patch(

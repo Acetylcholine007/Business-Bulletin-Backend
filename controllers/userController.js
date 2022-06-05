@@ -4,13 +4,42 @@ const User = require("../models/User");
 
 exports.getUsers = async (req, res, next) => {
   try {
-    const currentPage = req.query.page || 1;
     const perPage = 12;
-    const totalItems = await User.find().countDocuments();
-    const users = await User.find()
+    const query = req.query.query || "";
+    const currentPage = req.query.page || 1;
+    let queryTarget = req.query.target;
+    switch (req.query.target) {
+      case "firstname":
+        queryTarget = "firstname";
+        break;
+      case "lastname":
+        queryTarget = "lastname";
+        break;
+      case "email":
+        queryTarget = "email";
+        break;
+      default:
+        queryTarget = null;
+    }
+
+    const totalItems = await User.find(
+      query
+        ? queryTarget
+          ? { [queryTarget]: { $regex: query, $options: "i" } }
+          : {}
+        : {}
+    ).countDocuments();
+    const users = await User.find(
+      query
+        ? queryTarget
+          ? { [queryTarget]: { $regex: query, $options: "i" } }
+          : {}
+        : {}
+    )
       .sort({ createdAt: -1 })
       .skip((currentPage - 1) * perPage)
-      .limit(perPage);
+      .limit(perPage)
+      .populate("businesses");
 
     res.status(200).json({
       message: "Users fetched successfully.",
@@ -27,14 +56,13 @@ exports.getUsers = async (req, res, next) => {
 
 exports.getUser = async (req, res, next) => {
   try {
-    const userId = req.params.userId;
-    const user = await User.findById(userId);
+    const user = await User.findById(req.params.userId).populate("businesses");
     if (!user) {
-      const error = new Error("Could not find user.");
+      const error = new Error("Could not find user");
       error.statusCode = 404;
       throw error;
     }
-    res.status(200).json({ message: "User fetched.", user });
+    res.status(200).json({ message: "User fetched", user });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -43,7 +71,7 @@ exports.getUser = async (req, res, next) => {
   }
 };
 
-exports.editPassword = async (req, res, next) => {
+exports.changePassword = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -62,7 +90,6 @@ exports.editPassword = async (req, res, next) => {
     await user.save();
     res.status(200).json({
       message: "Password updated",
-      user,
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -88,6 +115,7 @@ exports.patchUser = async (req, res, next) => {
     user.lastname = req.body.lastname;
     user.contactNo = req.body.contactNo;
     await user.save();
+
     res.status(200).json({
       message: "User updated",
       user,

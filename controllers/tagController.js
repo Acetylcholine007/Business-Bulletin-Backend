@@ -1,10 +1,41 @@
 const { validationResult } = require("express-validator/check");
-const { DateTime } = require("luxon");
-const Reading = require("../models/Reading");
-const Buoy = require("../models/Buoy");
-const io = require("../utils/socket");
+const Tag = require("../models/Tag");
+mongoose = require("mongoose");
 
-exports.testPostReading = async (req, res, next) => {
+exports.getTags = async (req, res, next) => {
+  try {
+    const tags = await Tag.find({}).sort({ name: -1 });
+
+    res.status(200).json({
+      message: "Tags fetched successfully.",
+      tags,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getTag = async (req, res, next) => {
+  try {
+    const tag = await Tag.findById(req.params.tagId);
+    if (!tag) {
+      const error = new Error("Could not find tag");
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({ message: "Tag fetched", tag });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.postTag = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -13,41 +44,78 @@ exports.testPostReading = async (req, res, next) => {
       error.data = errors.array();
       throw error;
     }
-    const dateParts = req.body.date.split("/");
-    const timeParts = req.body.time.split(":");
 
-    let datetime = DateTime.local({
-      year: dateParts[2],
-      day: dateParts[1],
-      month: dateParts[0],
-      hour: timeParts[0],
-      minute: timeParts[1],
-      second: timeParts[2],
-    }).setZone("Asia/Singapore");
-
-    const reading = new Reading({
-      serialKey: req.body.serialKey,
-      floodLevel: req.body.floodLevel,
-      precipitation: req.body.precipitation,
-      current: req.body.current,
-      turbidity: req.body.turbidity,
-      datetime,
+    const tag = new Tag({
+      name: req.body.name,
     });
 
-    const buoy = await Buoy.findOne({serialKey: req.body.serialKey});
-    buoy.currentLevel = req.body.floodLevel;
-    await buoy.save();
+    await tag.save();
+    res.status(200).json({
+      message: "Tag added",
+      tag,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
 
-    // Corrective Logic
-    if (dateParts[2] === "1970") {
-      datetime = DateTime.now().setLocale("ph");
-      reading.datetime = datetime;
+exports.patchTag = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Failed to pass validation");
+      error.statusCode = 422;
+      error.data = errors.array();
+      throw error;
     }
 
-    console.log(reading);
-    io.getIO().emit(req.body.serialKey, reading);
+    const tag = await Tag.findById(req.params.tagId);
+    const tag2 = await Tag.findOne({
+      name: req.body.name,
+    });
+    if (!tag) {
+      const error = new Error("Tag does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
 
-    res.status(200).json(reading);
+    if (tag.name !== req.body.name && tag2) {
+      const error = new Error("Tag name already exists");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    tag.name = req.body.name;
+
+    await tag.save();
+    res.status(200).json({
+      message: "Tag updated",
+      tag,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deleteTag = async (req, res, next) => {
+  try {
+    if (req.params.tagId === undefined) {
+      const error = new Error("No tagId params attached in URL");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    await Tag.findByIdAndRemove(req.params.tagId);
+
+    res.status(200).json({
+      message: "Tag Removed",
+    });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;

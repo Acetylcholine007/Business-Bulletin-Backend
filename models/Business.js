@@ -53,7 +53,8 @@ const businessSchema = Schema(
       type: Number,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
+  { _id: false }
 );
 
 module.exports = mongoose.model("Business", businessSchema);
