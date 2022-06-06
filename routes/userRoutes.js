@@ -2,10 +2,11 @@ const express = require("express");
 const { body } = require("express-validator/check");
 const userController = require("../controllers/userController");
 const userAuthMW = require("../middlewares/userAuthMW");
+const adminControlMW = require("../middlewares/adminControlMW");
 
 const router = express.Router();
 
-router.get("/", userAuthMW, userController.getUsers);
+router.get("/", userAuthMW, adminControlMW, userController.getUsers);
 
 router.get("/:userId", userAuthMW, userController.getUser);
 

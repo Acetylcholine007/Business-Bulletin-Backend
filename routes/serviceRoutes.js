@@ -26,7 +26,7 @@ router.post(
       .isEmpty()
       .withMessage("Business ID required"),
   ],
-  serviceController.postProduct
+  serviceController.postService
 );
 
 router.patch(
@@ -46,7 +46,7 @@ router.patch(
       .isEmpty()
       .withMessage("Business ID required"),
   ],
-  serviceController.patchProduct
+  serviceController.patchService
 );
 
 router.delete("/:serviceId", userAuthMW, serviceController.deleteService);

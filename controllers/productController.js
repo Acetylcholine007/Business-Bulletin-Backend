@@ -1,5 +1,6 @@
 const { validationResult } = require("express-validator/check");
 const Product = require("../models/Product");
+const Business = require("../models/Business");
 mongoose = require("mongoose");
 
 exports.getProducts = async (req, res, next) => {
@@ -61,14 +62,32 @@ exports.postProduct = async (req, res, next) => {
       throw error;
     }
 
+    const business = await Business.findById(req.body.businessId);
+    if (!business) {
+      const error = new Error("Business does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+    if (req.userId !== business.owner.toString()) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
+
     const product = new Product({
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
-      business: req.body.businessId,
+      business: business,
     });
 
-    await product.save();
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await product.save({ session: sess });
+    business.products.push(product);
+    await business.save({ session: sess });
+    await sess.commitTransaction();
+
     res.status(200).json({
       message: "Product added",
       product,
@@ -91,7 +110,9 @@ exports.patchProduct = async (req, res, next) => {
       throw error;
     }
 
-    const product = await Product.findById(req.params.productId);
+    const product = await Product.findById(req.params.productId).populate({
+      path: "business",
+    });
     const product2 = await Product.findOne({
       name: req.body.name,
       business: req.body.businessId,
@@ -101,10 +122,14 @@ exports.patchProduct = async (req, res, next) => {
       error.statusCode = 422;
       throw error;
     }
-
     if (product.name !== req.body.name && product2) {
       const error = new Error("Product name already exists");
       error.statusCode = 422;
+      throw error;
+    }
+    if (req.userId !== product.business.owner.toString()) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
       throw error;
     }
 
@@ -133,7 +158,26 @@ exports.deleteProduct = async (req, res, next) => {
       throw error;
     }
 
-    await Product.findByIdAndRemove(req.params.productId);
+    const product = await Product.findById(req.params.productId).populate(
+      "business"
+    );
+    if (!product) {
+      const error = new Error("Product does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+    if (req.userId !== product.business.owner.toString()) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await product.remove({ session: sess });
+    product.business.products.pull(product);
+    await product.business.save({ session: sess });
+    await sess.commitTransaction();
 
     res.status(200).json({
       message: "Product Removed",

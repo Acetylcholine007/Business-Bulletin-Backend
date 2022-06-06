@@ -2,7 +2,7 @@ const { validationResult } = require("express-validator/check");
 const Service = require("../models/Service");
 mongoose = require("mongoose");
 
-<exports className="getServices"></exports> = async (req, res, next) => {
+exports.getServices = async (req, res, next) => {
   try {
     const perPage = 12;
     const query = req.query.query || "";
@@ -61,6 +61,18 @@ exports.postService = async (req, res, next) => {
       throw error;
     }
 
+    const business = await Business.findById(req.body.businessId);
+    if (!business) {
+      const error = new Error("Business does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+    if (req.userId !== business.owner.toString()) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
+
     const service = new Service({
       name: req.body.name,
       description: req.body.description,
@@ -68,7 +80,13 @@ exports.postService = async (req, res, next) => {
       business: req.body.businessId,
     });
 
-    await service.save();
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await service.save({ session: sess });
+    business.services.push(service);
+    await service.save({ session: sess });
+    await sess.commitTransaction();
+
     res.status(200).json({
       message: "Service added",
       service,
@@ -91,7 +109,9 @@ exports.patchService = async (req, res, next) => {
       throw error;
     }
 
-    const service = await Service.findById(req.params.serviceId);
+    const service = await Service.findById(req.params.serviceId).populate({
+      path: "business",
+    });
     const service2 = await Service.findOne({
       name: req.body.name,
       business: req.body.businessId,
@@ -101,10 +121,14 @@ exports.patchService = async (req, res, next) => {
       error.statusCode = 422;
       throw error;
     }
-
     if (service.name !== req.body.name && service2) {
       const error = new Error("Service name already exists");
       error.statusCode = 422;
+      throw error;
+    }
+    if (req.userId !== service.business.owner.toString()) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
       throw error;
     }
 
@@ -133,7 +157,27 @@ exports.deleteService = async (req, res, next) => {
       throw error;
     }
 
-    await Service.findByIdAndRemove(req.params.serviceId);
+    const service = await Service.findById(req.params.serviceId).populate(
+      "business"
+    );
+
+    if (!service) {
+      const error = new Error("Service does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+    if (req.userId !== service.business.owner.toString()) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await service.remove({ session: sess });
+    service.business.services.pull(service);
+    await service.business.save({ session: sess });
+    await sess.commitTransaction();
 
     res.status(200).json({
       message: "Service Removed",

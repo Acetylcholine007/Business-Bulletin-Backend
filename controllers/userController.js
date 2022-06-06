@@ -56,6 +56,11 @@ exports.getUsers = async (req, res, next) => {
 
 exports.getUser = async (req, res, next) => {
   try {
+    if (req.accountType !== 2 || req.userId !== req.params.userId) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
     const user = await User.findById(req.params.userId).populate("businesses");
     if (!user) {
       const error = new Error("Could not find user");
@@ -73,6 +78,11 @@ exports.getUser = async (req, res, next) => {
 
 exports.changePassword = async (req, res, next) => {
   try {
+    if (req.userId !== req.params.userId) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       const error = new Error("Failed to pass validation");
@@ -80,8 +90,7 @@ exports.changePassword = async (req, res, next) => {
       error.data = errors.array();
       throw error;
     }
-    const userId = req.params.userId;
-    const user = await User.findById(userId);
+    const user = await User.findById(req.params.userId);
 
     const password = req.body.password;
     const hashedPw = await bcrypt.hash(password, 12);
@@ -101,6 +110,11 @@ exports.changePassword = async (req, res, next) => {
 
 exports.patchUser = async (req, res, next) => {
   try {
+    if (req.userId !== req.params.userId) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       const error = new Error("Failed to pass validation");
@@ -130,6 +144,11 @@ exports.patchUser = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   try {
+    if (req.userId !== req.params.userId) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
     const userId = req.params.userId;
     if (userId === undefined) {
       const error = new Error("No userId params attached in URL");
@@ -137,7 +156,19 @@ exports.deleteUser = async (req, res, next) => {
       throw error;
     }
 
-    await User.findByIdAndRemove(userId);
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      const error = new Error("User does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await user.remove({ session: sess });
+    //TODO: Add business clearing logic
+    await sess.commitTransaction();
 
     res.status(200).json({
       message: "User Removed",

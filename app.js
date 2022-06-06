@@ -8,11 +8,11 @@ const corsMW = require("./middlewares/corsMW");
 const errorMW = require("./middlewares/errorMW");
 
 const authRoutes = require("./routes/authRoutes");
-const nusinessRoutes = require("./routes/buoyRoutes");
-const productRoutes = require("./routes/reportRoutes");
-const serviceRoutes = require("./routes/readingRoutes");
-const tagRoutes = require("./routes/userRoutes");
-const userRoutes = require("./routes/testRoutes");
+const businessRoutes = require("./routes/businessRoutes");
+const productRoutes = require("./routes/productRoutes");
+const serviceRoutes = require("./routes/serviceRoutes");
+const tagRoutes = require("./routes/tagRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -26,7 +26,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(corsMW);
 
 app.use("/auth", authRoutes);
-app.use("/businesses", nusinessRoutes);
+app.use("/businesses", businessRoutes);
 app.use("/products", productRoutes);
 app.use("/services", serviceRoutes);
 app.use("/tags", tagRoutes);

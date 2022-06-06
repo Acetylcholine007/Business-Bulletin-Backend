@@ -2,6 +2,7 @@ const express = require("express");
 const { body } = require("express-validator/check");
 const businessController = require("../controllers/businessController");
 const userAuthMW = require("../middlewares/userAuthMW");
+const adminControlMW = require("../middlewares/adminControlMW");
 
 const router = express.Router();
 
@@ -36,6 +37,7 @@ router.post(
 router.patch(
   "/verifyBusiness:businessId",
   userAuthMW,
+  adminControlMW,
   [body("isVerified").not().isEmpty().withMessage("Status required")],
   businessController.verifyBusiness
 );

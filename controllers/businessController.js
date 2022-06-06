@@ -2,6 +2,7 @@ const { validationResult } = require("express-validator/check");
 const Business = require("../models/Business");
 const Product = require("../models/Product");
 const Service = require("../models/Service");
+const User = require("../models/User");
 mongoose = require("mongoose");
 
 exports.getBusinesses = async (req, res, next) => {
@@ -92,6 +93,16 @@ exports.postBusiness = async (req, res, next) => {
     const productIds = [];
     const serviceIds = [];
 
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      const error = new Error("User does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
     for (const product of products) {
       const newProduct = new Product({
         name: product.name,
@@ -100,7 +111,7 @@ exports.postBusiness = async (req, res, next) => {
         business: businessId,
       });
       productIds.push(newProduct._id);
-      await newProduct.save();
+      await newProduct.save({ session: sess });
     }
 
     for (const service of services) {
@@ -111,7 +122,7 @@ exports.postBusiness = async (req, res, next) => {
         business: businessId,
       });
       serviceIds.push(newService._id);
-      await newService.save();
+      await newService.save({ session: sess });
     }
 
     const business = new Business({
@@ -120,7 +131,7 @@ exports.postBusiness = async (req, res, next) => {
       description: req.body.description,
       address: req.body.address,
       contactNo: req.body.contactNo,
-      owner: req.body.userId,
+      owner: req.userId,
       products: productIds,
       services: serviceIds,
       tags: req.body.tags,
@@ -128,10 +139,48 @@ exports.postBusiness = async (req, res, next) => {
       lng: req.body.lng,
     });
 
-    await business.save();
+    user.businesses.push(business);
+
+    await user.save({ session: sess });
+    await business.save({ session: sess });
+    await sess.commitTransaction();
+
     res.status(200).json({
       message: "Business added",
-      buoy,
+      business,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.verifyBusiness = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Failed to pass validation");
+      error.statusCode = 422;
+      error.data = errors.array();
+      throw error;
+    }
+
+    const business = await Business.findById(req.params.businessId);
+
+    if (!business) {
+      const error = new Error("Business does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    business.isVerified = req.body.isVerified;
+
+    await business.save();
+    res.status(200).json({
+      message: "Business updated",
+      business,
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -153,6 +202,13 @@ exports.patchBusiness = async (req, res, next) => {
 
     const business = await Business.findById(req.params.businessId);
     const business2 = await Business.findOne({ name: req.body.name });
+    
+    if (req.userId !== business.owner.toString()) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
+
     if (!business) {
       const error = new Error("Business does not exists");
       error.statusCode = 422;
@@ -176,7 +232,7 @@ exports.patchBusiness = async (req, res, next) => {
     await business.save();
     res.status(200).json({
       message: "Business updated",
-      buoy: business,
+      business,
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -194,7 +250,28 @@ exports.deleteBusiness = async (req, res, next) => {
       throw error;
     }
 
-    await Business.findByIdAndRemove(req.params.businessId);
+    const business = await Business.findById(req.params.businessId).populate(
+      "owner"
+    );
+
+    if (!business) {
+      const error = new Error("Business does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    if (req.userId !== business.owner._id.toString()) {
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await business.remove({ session: sess });
+    business.owner.businesses.pull(business);
+    await business.owner.save({ session: sess });
+    await sess.commitTransaction();
 
     res.status(200).json({
       message: "Business Removed",

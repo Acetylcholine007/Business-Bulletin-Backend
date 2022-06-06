@@ -120,6 +120,7 @@ exports.verifyUser = async (req, res, next) => {
     res.render("verificationResult", {
       message: "Verification successful",
       webappUrl: process.env.WEBAPP_URL,
+      serverUrl: process.env.SERVER_URL,
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -135,6 +136,8 @@ exports.resetPassword = async (req, res, next) => {
     if (!user) {
       res.render("resetPasswordResult", {
         message: "Password Reset unsuccessful, user not found.",
+        webappUrl: process.env.WEBAPP_URL,
+        serverUrl: process.env.SERVER_URL,
       });
     }
 
