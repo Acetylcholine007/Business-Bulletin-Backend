@@ -43,6 +43,14 @@ router.patch(
 );
 
 router.patch(
+  "/allowBusiness:businessId",
+  userAuthMW,
+  adminControlMW,
+  [body("status").not().isEmpty().withMessage("Status required")],
+  businessController.allowBusiness
+);
+
+router.patch(
   "/:businessId",
   userAuthMW,
   [

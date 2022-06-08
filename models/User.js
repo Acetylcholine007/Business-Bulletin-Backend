@@ -31,6 +31,13 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: Boolean,
+      default: true,
+    },
+    profileUri: {
+      type: String,
+    },
     businesses: [
       {
         type: Schema.Types.ObjectId,

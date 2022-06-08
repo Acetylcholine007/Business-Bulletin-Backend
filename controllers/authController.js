@@ -25,6 +25,7 @@ exports.signup = async (req, res, next) => {
       email: req.body.email,
       password: hashedPw,
       contactNo: req.body.contactNo,
+      profileUri: req.body.profileUri,
     });
 
     const result = await user.save();

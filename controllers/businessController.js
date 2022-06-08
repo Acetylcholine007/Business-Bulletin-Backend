@@ -137,6 +137,9 @@ exports.postBusiness = async (req, res, next) => {
       tags: req.body.tags,
       lat: req.body.lat,
       lng: req.body.lng,
+      logoUri: req.body.logoUri,
+      bannerUri: req.body.bannerUri,
+      credentials: req.body.credentials,
     });
 
     user.businesses.push(business);
@@ -190,6 +193,39 @@ exports.verifyBusiness = async (req, res, next) => {
   }
 };
 
+exports.allowBusiness = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Failed to pass validation");
+      error.statusCode = 422;
+      error.data = errors.array();
+      throw error;
+    }
+
+    const business = await Business.findById(req.params.businessId);
+
+    if (!business) {
+      const error = new Error("Business does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    business.status = req.body.status;
+
+    await business.save();
+    res.status(200).json({
+      message: "Business updated",
+      business,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
 exports.patchBusiness = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -202,7 +238,7 @@ exports.patchBusiness = async (req, res, next) => {
 
     const business = await Business.findById(req.params.businessId);
     const business2 = await Business.findOne({ name: req.body.name });
-    
+
     if (req.userId !== business.owner.toString()) {
       const error = new Error("Forbidden");
       error.statusCode = 403;
@@ -228,6 +264,9 @@ exports.patchBusiness = async (req, res, next) => {
     business.tags = req.body.tags;
     business.lat = req.body.lat;
     business.lng = req.body.lng;
+    business.logoUri = req.body.logoUri;
+    business.bannerUri = req.body.bannerUri;
+    business.credentials = req.body.credentials;
 
     await business.save();
     res.status(200).json({

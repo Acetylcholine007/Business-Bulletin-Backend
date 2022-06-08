@@ -23,6 +23,14 @@ router.patch(
 );
 
 router.patch(
+  "/allowUser:userId",
+  userAuthMW,
+  adminControlMW,
+  [body("status").not().isEmpty().withMessage("Status required")],
+  userController.allowUser
+);
+
+router.patch(
   "/:userId",
   userAuthMW,
   [

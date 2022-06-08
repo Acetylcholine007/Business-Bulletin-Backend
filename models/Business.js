@@ -28,6 +28,10 @@ const businessSchema = Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: Boolean,
+      default: true,
+    },
     products: [
       {
         type: Schema.Types.ObjectId,
@@ -52,6 +56,17 @@ const businessSchema = Schema(
     lng: {
       type: Number,
     },
+    logoUri: {
+      type: String,
+    },
+    bannerUri: {
+      type: String,
+    },
+    credentials: [
+      {
+        type: String,
+      },
+    ],
   },
   { timestamps: true },
   { _id: false }

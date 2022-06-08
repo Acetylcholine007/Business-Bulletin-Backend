@@ -78,6 +78,7 @@ exports.postService = async (req, res, next) => {
       description: req.body.description,
       price: req.body.price,
       business: req.body.businessId,
+      imagesUri: req.body.imagesUri,
     });
 
     const sess = await mongoose.startSession();
@@ -135,6 +136,7 @@ exports.patchService = async (req, res, next) => {
     service.name = req.body.name;
     service.description = req.body.description;
     service.price = req.body.price;
+    service.imagesUri = req.body.imagesUri;
 
     await service.save();
     res.status(200).json({

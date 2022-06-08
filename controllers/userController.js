@@ -128,11 +128,45 @@ exports.patchUser = async (req, res, next) => {
     user.firstname = req.body.firstname;
     user.lastname = req.body.lastname;
     user.contactNo = req.body.contactNo;
+    user.profileUri = req.body.profileUri;
     await user.save();
 
     res.status(200).json({
       message: "User updated",
       user,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.allowUser = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Failed to pass validation");
+      error.statusCode = 422;
+      error.data = errors.array();
+      throw error;
+    }
+
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      const error = new Error("User does not exists");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    user.status = req.body.status;
+
+    await user.save();
+    res.status(200).json({
+      message: "User updated",
+      business: user,
     });
   } catch (err) {
     if (!err.statusCode) {

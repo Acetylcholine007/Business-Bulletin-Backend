@@ -79,6 +79,7 @@ exports.postProduct = async (req, res, next) => {
       description: req.body.description,
       price: req.body.price,
       business: business,
+      imagesUri: req.body.imagesUri,
     });
 
     const sess = await mongoose.startSession();
@@ -136,6 +137,7 @@ exports.patchProduct = async (req, res, next) => {
     product.name = req.body.name;
     product.description = req.body.description;
     product.price = req.body.price;
+    product.imagesUri = req.body.imagesUri;
 
     await product.save();
     res.status(200).json({
