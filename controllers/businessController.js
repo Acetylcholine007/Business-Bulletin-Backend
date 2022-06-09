@@ -58,6 +58,66 @@ exports.getBusinesses = async (req, res, next) => {
   }
 };
 
+exports.getUserBusinesses = async (req, res, next) => {
+  try {
+    const perPage = 12;
+    const query = req.query.query || "";
+    const currentPage = req.query.page || 1;
+    let queryTarget = req.query.target;
+    switch (req.query.target) {
+      case "firstname":
+        queryTarget = "firstname";
+        break;
+      case "lastname":
+        queryTarget = "lastname";
+        break;
+      case "email":
+        queryTarget = "email";
+        break;
+      default:
+        queryTarget = null;
+    }
+
+    if(req.userId !== req.params.userId) {
+      console.log(req.userId, req.params.userId)
+      const error = new Error("Forbidden");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const totalItems = await Business.find(
+      query
+        ? queryTarget
+          ? { [queryTarget]: { $regex: query, $options: "i" }, owner: req.params.userId }
+          : { owner: req.params.userId }
+        : { owner: req.params.userId }
+    ).countDocuments();
+    const businesses = await Business.find(
+      query
+        ? queryTarget
+        ? { [queryTarget]: { $regex: query, $options: "i" }, owner: req.params.userId }
+        : { owner: req.params.userId }
+      : { owner: req.params.userId }
+    )
+      .sort({ createdAt: -1 })
+      .skip((currentPage - 1) * perPage)
+      .limit(perPage)
+      .populate("products")
+      .populate("services");
+
+    res.status(200).json({
+      message: "Businesses fetched successfully.",
+      businesses,
+      totalItems,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
 exports.getBusiness = async (req, res, next) => {
   try {
     const business = await Business.findById(req.params.businessId)

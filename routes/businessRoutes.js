@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.get("/", businessController.getBusinesses);
 
+router.get("/user/:userId", userAuthMW, businessController.getUserBusinesses);
+
 router.get("/:businessId", businessController.getBusiness);
 
 router.post(
