@@ -166,7 +166,7 @@ exports.allowUser = async (req, res, next) => {
     await user.save();
     res.status(200).json({
       message: "User updated",
-      business: user,
+      user,
     });
   } catch (err) {
     if (!err.statusCode) {

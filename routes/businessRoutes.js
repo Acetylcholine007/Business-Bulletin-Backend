@@ -35,7 +35,7 @@ router.post(
 );
 
 router.patch(
-  "/verifyBusiness:businessId",
+  "/verifyBusiness/:businessId",
   userAuthMW,
   adminControlMW,
   [body("isVerified").not().isEmpty().withMessage("Status required")],
@@ -43,7 +43,7 @@ router.patch(
 );
 
 router.patch(
-  "/allowBusiness:businessId",
+  "/allowBusiness/:businessId",
   userAuthMW,
   adminControlMW,
   [body("status").not().isEmpty().withMessage("Status required")],
