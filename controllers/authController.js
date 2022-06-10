@@ -82,6 +82,7 @@ exports.login = async (req, res, next) => {
       {
         email: loadedUser.email,
         userId: loadedUser._id.toString(),
+        accountType: loadedUser.accountType,
       },
       process.env.SECRET_KEY
       // { expiresIn: process.env.TOKEN_EXPIRATION }

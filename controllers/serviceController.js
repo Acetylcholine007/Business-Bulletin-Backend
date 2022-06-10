@@ -1,5 +1,6 @@
 const { validationResult } = require("express-validator/check");
 const Service = require("../models/Service");
+const Business = require("../models/Business");
 mongoose = require("mongoose");
 
 exports.getServices = async (req, res, next) => {
@@ -77,7 +78,7 @@ exports.postService = async (req, res, next) => {
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
-      business: req.body.businessId,
+      business: business,
       imagesUri: req.body.imagesUri,
     });
 
@@ -85,7 +86,7 @@ exports.postService = async (req, res, next) => {
     sess.startTransaction();
     await service.save({ session: sess });
     business.services.push(service);
-    await service.save({ session: sess });
+    await business.save({ session: sess });
     await sess.commitTransaction();
 
     res.status(200).json({

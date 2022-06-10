@@ -43,7 +43,8 @@ exports.getBusinesses = async (req, res, next) => {
       .skip((currentPage - 1) * perPage)
       .limit(perPage)
       .populate("products")
-      .populate("services");
+      .populate("services")
+      .populate("owner");
 
     res.status(200).json({
       message: "Businesses fetched successfully.",
@@ -78,8 +79,8 @@ exports.getUserBusinesses = async (req, res, next) => {
         queryTarget = null;
     }
 
-    if(req.userId !== req.params.userId) {
-      console.log(req.userId, req.params.userId)
+    if (req.userId !== req.params.userId) {
+      console.log(req.userId, req.params.userId);
       const error = new Error("Forbidden");
       error.statusCode = 403;
       throw error;
@@ -88,22 +89,29 @@ exports.getUserBusinesses = async (req, res, next) => {
     const totalItems = await Business.find(
       query
         ? queryTarget
-          ? { [queryTarget]: { $regex: query, $options: "i" }, owner: req.params.userId }
+          ? {
+              [queryTarget]: { $regex: query, $options: "i" },
+              owner: req.params.userId,
+            }
           : { owner: req.params.userId }
         : { owner: req.params.userId }
     ).countDocuments();
     const businesses = await Business.find(
       query
         ? queryTarget
-        ? { [queryTarget]: { $regex: query, $options: "i" }, owner: req.params.userId }
+          ? {
+              [queryTarget]: { $regex: query, $options: "i" },
+              owner: req.params.userId,
+            }
+          : { owner: req.params.userId }
         : { owner: req.params.userId }
-      : { owner: req.params.userId }
     )
       .sort({ createdAt: -1 })
       .skip((currentPage - 1) * perPage)
       .limit(perPage)
       .populate("products")
-      .populate("services");
+      .populate("services")
+      .populate("owner");
 
     res.status(200).json({
       message: "Businesses fetched successfully.",
@@ -122,7 +130,8 @@ exports.getBusiness = async (req, res, next) => {
   try {
     const business = await Business.findById(req.params.businessId)
       .populate("products")
-      .populate("services");
+      .populate("services")
+      .populate("owner");
     if (!business) {
       const error = new Error("Could not find business");
       error.statusCode = 404;
@@ -169,6 +178,7 @@ exports.postBusiness = async (req, res, next) => {
         description: product.description,
         price: product.price,
         business: businessId,
+        imagesUri: product.imagesUri,
       });
       productIds.push(newProduct._id);
       await newProduct.save({ session: sess });
@@ -180,6 +190,7 @@ exports.postBusiness = async (req, res, next) => {
         description: service.description,
         price: service.price,
         business: businessId,
+        imagesUri: product.imagesUri,
       });
       serviceIds.push(newService._id);
       await newService.save({ session: sess });
