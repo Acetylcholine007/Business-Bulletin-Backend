@@ -25,6 +25,7 @@ exports.signup = async (req, res, next) => {
       email: req.body.email,
       password: hashedPw,
       contactNo: req.body.contactNo,
+      address: req.body.address,
       profileUri: req.body.profileUri,
     });
 
@@ -95,8 +96,10 @@ exports.login = async (req, res, next) => {
         firstname: loadedUser.firstname,
         lastname: loadedUser.lastname,
         contactNo: loadedUser.contactNo,
+        address: loadedUser.address,
         email: loadedUser.email,
         accountType: loadedUser.accountType,
+        profileUri: loadedUser.profileUri,
       },
     });
   } catch (err) {

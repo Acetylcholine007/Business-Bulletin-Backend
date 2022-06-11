@@ -41,6 +41,7 @@ router.patch(
       .not()
       .isEmpty()
       .withMessage("Contact No. required"),
+    body("address").trim().not().isEmpty().withMessage("Address required"),
   ],
   userController.patchUser
 );

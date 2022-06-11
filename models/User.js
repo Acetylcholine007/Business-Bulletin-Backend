@@ -23,6 +23,10 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    address: {
+      type: String,
+      required: true,
+    },
     accountType: {
       type: Number,
       default: 1,

@@ -31,6 +31,7 @@ router.post(
       .not()
       .isEmpty()
       .withMessage("contact No. required"),
+    body("address").trim().not().isEmpty().withMessage("Address required"),
   ],
   authController.signup
 );

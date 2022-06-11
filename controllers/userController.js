@@ -56,7 +56,7 @@ exports.getUsers = async (req, res, next) => {
 
 exports.getUser = async (req, res, next) => {
   try {
-    if (req.accountType !== 2 || req.userId !== req.params.userId) {
+    if (req.accountType !== 2 && req.userId !== req.params.userId) {
       const error = new Error("Forbidden");
       error.statusCode = 403;
       throw error;
@@ -128,6 +128,7 @@ exports.patchUser = async (req, res, next) => {
     user.firstname = req.body.firstname;
     user.lastname = req.body.lastname;
     user.contactNo = req.body.contactNo;
+    user.address = req.body.address;
     user.profileUri = req.body.profileUri;
     await user.save();
 
