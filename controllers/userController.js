@@ -9,28 +9,34 @@ exports.getUsers = async (req, res, next) => {
     const currentPage = req.query.page || 1;
     let queryTarget = req.query.target;
     switch (req.query.target) {
-      case "firstname":
+      case "first name":
         queryTarget = "firstname";
         break;
-      case "lastname":
+      case "last name":
         queryTarget = "lastname";
         break;
       case "email":
         queryTarget = "email";
+        break;
+      case "contactno.":
+        queryTarget = "contactNo";
+        break;
+      case "address":
+        queryTarget = "address";
         break;
       default:
         queryTarget = null;
     }
 
     const totalItems = await User.find(
-      query
+      query !== ""
         ? queryTarget
           ? { [queryTarget]: { $regex: query, $options: "i" } }
           : {}
         : {}
     ).countDocuments();
     const users = await User.find(
-      query
+      query !== ""
         ? queryTarget
           ? { [queryTarget]: { $regex: query, $options: "i" } }
           : {}

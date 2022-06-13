@@ -12,28 +12,28 @@ exports.getBusinesses = async (req, res, next) => {
     const currentPage = req.query.page || 1;
     let queryTarget = req.query.target;
     switch (req.query.target) {
-      case "firstname":
-        queryTarget = "firstname";
+      case "name":
+        queryTarget = "name";
         break;
-      case "lastname":
-        queryTarget = "lastname";
+      case "address":
+        queryTarget = "address";
         break;
-      case "email":
-        queryTarget = "email";
+      case "contact no.":
+        queryTarget = "contactNo";
         break;
       default:
         queryTarget = null;
     }
 
     const totalItems = await Business.find(
-      query
+      query !== ""
         ? queryTarget
           ? { [queryTarget]: { $regex: query, $options: "i" } }
           : {}
         : {}
     ).countDocuments();
     const businesses = await Business.find(
-      query
+      query !== ""
         ? queryTarget
           ? { [queryTarget]: { $regex: query, $options: "i" } }
           : {}
@@ -44,7 +44,8 @@ exports.getBusinesses = async (req, res, next) => {
       .limit(perPage)
       .populate("products")
       .populate("services")
-      .populate("owner");
+      .populate("owner")
+      .populate("tags");
 
     res.status(200).json({
       message: "Businesses fetched successfully.",
@@ -66,28 +67,27 @@ exports.getUserBusinesses = async (req, res, next) => {
     const currentPage = req.query.page || 1;
     let queryTarget = req.query.target;
     switch (req.query.target) {
-      case "firstname":
-        queryTarget = "firstname";
+      case "name":
+        queryTarget = "name";
         break;
-      case "lastname":
-        queryTarget = "lastname";
+      case "address":
+        queryTarget = "address";
         break;
-      case "email":
-        queryTarget = "email";
+      case "contactno.":
+        queryTarget = "contactNo";
         break;
       default:
         queryTarget = null;
     }
 
     if (req.userId !== req.params.userId) {
-      console.log(req.userId, req.params.userId);
       const error = new Error("Forbidden");
       error.statusCode = 403;
       throw error;
     }
 
     const totalItems = await Business.find(
-      query
+      query !== ""
         ? queryTarget
           ? {
               [queryTarget]: { $regex: query, $options: "i" },
@@ -97,7 +97,7 @@ exports.getUserBusinesses = async (req, res, next) => {
         : { owner: req.params.userId }
     ).countDocuments();
     const businesses = await Business.find(
-      query
+      query !== ""
         ? queryTarget
           ? {
               [queryTarget]: { $regex: query, $options: "i" },
@@ -111,7 +111,8 @@ exports.getUserBusinesses = async (req, res, next) => {
       .limit(perPage)
       .populate("products")
       .populate("services")
-      .populate("owner");
+      .populate("owner")
+      .populate("tags");
 
     res.status(200).json({
       message: "Businesses fetched successfully.",
@@ -131,7 +132,8 @@ exports.getBusiness = async (req, res, next) => {
     const business = await Business.findById(req.params.businessId)
       .populate("products")
       .populate("services")
-      .populate("owner");
+      .populate("owner")
+      .populate("tags");
     if (!business) {
       const error = new Error("Could not find business");
       error.statusCode = 404;
@@ -190,7 +192,7 @@ exports.postBusiness = async (req, res, next) => {
         description: service.description,
         price: service.price,
         business: businessId,
-        imagesUri: product.imagesUri,
+        imagesUri: service.imagesUri,
       });
       serviceIds.push(newService._id);
       await newService.save({ session: sess });
