@@ -50,11 +50,15 @@ const businessSchema = Schema(
         ref: "Tag",
       },
     ],
-    lat: {
-      type: Number,
-    },
-    lng: {
-      type: Number,
+    coordinates: {
+      lat: {
+        type: Number,
+        default: 0,
+      },
+      lng: {
+        type: Number,
+        default: 0,
+      },
     },
     logoUri: {
       type: String,

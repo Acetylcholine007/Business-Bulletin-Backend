@@ -208,8 +208,10 @@ exports.postBusiness = async (req, res, next) => {
       products: productIds,
       services: serviceIds,
       tags: req.body.tags,
-      lat: req.body.lat,
-      lng: req.body.lng,
+      coordinates: {
+        lat: req.body.coordinates.lat,
+        lng: req.body.coordinates.lng,
+      },
       logoUri: req.body.logoUri,
       bannerUri: req.body.bannerUri,
       credentials: req.body.credentials,
@@ -335,8 +337,10 @@ exports.patchBusiness = async (req, res, next) => {
     business.address = req.body.address;
     business.contactNo = req.body.contactNo;
     business.tags = req.body.tags;
-    business.lat = req.body.lat;
-    business.lng = req.body.lng;
+    business.coordinates = {
+      lat: req.body.coordinates.lat,
+      lng: req.body.coordinates.lng,
+    };
     business.logoUri = req.body.logoUri;
     business.bannerUri = req.body.bannerUri;
     business.credentials = req.body.credentials;

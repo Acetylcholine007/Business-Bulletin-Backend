@@ -32,6 +32,16 @@ router.post(
       .not()
       .isEmpty()
       .withMessage("Business contact no. required"),
+    body("coordinates.lat")
+      .isNumeric()
+      .not()
+      .isEmpty()
+      .withMessage("Invalid latitude"),
+    body("coordinates.lng")
+      .isNumeric()
+      .not()
+      .isEmpty()
+      .withMessage("Invalid longitude"),
   ],
   businessController.postBusiness
 );
@@ -72,6 +82,16 @@ router.patch(
       .not()
       .isEmpty()
       .withMessage("Business contact no. required"),
+    body("coordinates.lat")
+      .isNumeric()
+      .not()
+      .isEmpty()
+      .withMessage("Invalid latitude"),
+    body("coordinates.lng")
+      .isNumeric()
+      .not()
+      .isEmpty()
+      .withMessage("Invalid longitude"),
   ],
   businessController.patchBusiness
 );
