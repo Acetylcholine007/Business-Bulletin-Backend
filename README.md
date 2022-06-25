@@ -1,4 +1,4 @@
-# Business Bulletin Frontend
+# Business Bulletin Backend
 
 ## Overview
 Node-Express implementation of business finder web server deployed in Heroku.
